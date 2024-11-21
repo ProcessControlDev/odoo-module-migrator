@@ -210,6 +210,7 @@ def reformat_deprecated_tags(
             reformatted_files.append(reformatted_file)
     logger.debug("Reformatted files:\n" f"{list(reformatted_files)}")
     replace_savepoint_case(module_path)
+    process_directory(module_path)
     add_sudo_to_ir_model(module_path)
     replace_dollar_braces_in_xml(module_path)
 
@@ -226,6 +227,24 @@ def replace_savepoint_case(module_path: Path):
         new_content = content.replace("SavepointCase", "TransactionCase")
         if content != new_content:
             file_path.write_text(new_content, encoding="utf-8")
+
+
+def replace_setUp_with_setUpClass(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    updated_content = re.sub(r'\bdef\s+setUp\s*\(.*\):', 'def setUpClass(cls):', content)
+    if updated_content != content:
+        with open(file_path, 'w') as file:
+            file.write(updated_content)
+
+
+def process_directory(directory_path):
+    for root, dirs, files in os.walk(directory_path):
+        for file in files:
+            if 'test' in file.lower() and file.endswith('.py'):
+                file_path = os.path.join(root, file)
+                replace_setUp_with_setUpClass(file_path)
 
 
 class MigrationScript(BaseMigrationScript):
